@@ -10,7 +10,7 @@ from pointnet import *
 from losses_and_metrics_for_mesh import *
 import utils
 import pandas as pd
-
+from losses import BCEDiceLoss
 if __name__ == '__main__':
     
     torch.cuda.set_device(utils.get_avail_gpu()) # assign which gpu will be used (only linux works)
@@ -20,10 +20,10 @@ if __name__ == '__main__':
     val_list = './val_list_1.csv'
     
     model_path = './models'
-    model_name = 'Mesh_Segementation_PointNet_test_15_classes_72samples' #remember to include the project title (e.g., ALV)
-    checkpoint_name = 'latest_checkpoint.tar'
+    model_name = 'Mesh_Segementation_PointNett_2_classes_data3_3samples_2_with_augmentation' #remember to include the project title (e.g., ALV)
+    checkpoint_name = 'data3_3samples_checkpoint_2_with_augmentation.tar'
     
-    num_classes = 15
+    num_classes = 2
     num_channels = 15 #number of features
     num_epochs = 200
     num_workers = 0
@@ -43,10 +43,10 @@ if __name__ == '__main__':
     # set dataset
     training_dataset = Mesh_Dataset(data_list_path=train_list,
                                     num_classes=num_classes,
-                                    patch_size=6000)
+                                    patch_size=7000)
     val_dataset = Mesh_Dataset(data_list_path=val_list,
                                num_classes=num_classes,
-                               patch_size=6000)
+                               patch_size=7000)
     
     train_loader = DataLoader(dataset=training_dataset,
                               batch_size=train_batch_size,
@@ -62,7 +62,9 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = PointNet_Seg(num_classes=num_classes, channel=num_channels).to(device, dtype=torch.float)
     opt = optim.Adam(model.parameters(), amsgrad=True)
-    #scheduler = StepLR(opt, step_size=2, gamma=0.8)
+    class_weights = torch.ones(num_classes).to(device, dtype=torch.float)
+    # criterion = BCEDiceLoss(0.1, 0.9)
+    # scheduler = StepLR(opt, step_size=2, gamma=0.8)
     
     losses, mdsc, msen, mppv = [], [], [], []
     val_losses, val_mdsc, val_msen, val_mppv = [], [], [], []
@@ -74,7 +76,7 @@ if __name__ == '__main__':
     torch.backends.cudnn.enabled = True
         
     print('Training model...')
-    class_weights = torch.ones(15).to(device, dtype=torch.float)
+
     for epoch in range(num_epochs):
 
         # training
@@ -92,13 +94,17 @@ if __name__ == '__main__':
             # send mini-batch to device            
             inputs = batched_sample['cells'].to(device, dtype=torch.float)
             labels = batched_sample['labels'].to(device, dtype=torch.long)
+            # print(labels)
             one_hot_labels = nn.functional.one_hot(labels[:, 0, :], num_classes=num_classes)
-            
+            # print(one_hot_labels)
             # zero the parameter gradients
             opt.zero_grad()
             
             # forward + backward + optimize
+            # print(inputs.shape)
             outputs = model(inputs)
+
+            # print(outputs)
             loss = Generalized_Dice_Loss(outputs, one_hot_labels, class_weights)
             dsc = weighting_DSC(outputs, one_hot_labels, class_weights)
             sen = weighting_SEN(outputs, one_hot_labels, class_weights)
@@ -239,4 +245,4 @@ if __name__ == '__main__':
         stat.to_csv('losses_metrics_vs_epoch.csv')
             
 #        # decay learning rate
-#        scheduler.step()
+#         scheduler.step()
