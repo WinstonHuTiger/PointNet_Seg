@@ -13,11 +13,11 @@ if __name__ == '__main__':
     torch.cuda.set_device(utils.get_avail_gpu()) # assign which gpu will be used (only linux works)
       
     model_path = './models'
-    #model_name = 'checkpoint.tar'
-    model_name = 'Mesh_Segementation_PointNet_15_classes_72samples_best.tar'
+    model_name = 'latest_checkpoint.tar'
+    # model_name = 'Mesh_Segementation_PointNet_test_15_classes_72samples_best.tar'
     
-    mesh_path = '/home/brucewu/data/OSU_Mesh_Tooth_Segmentation/GroundTruth/maxillary_surface_T0_np10000_bg_0_vtk'
-    test_list = [31, 32, 33, 34, 35, 36]
+    mesh_path = '/dev_data/dev/PointNet_Seg/data_3/samples'
+    test_list = [5]
     test_mesh_filename = 'Sample_0{0}_d.vtp'
     test_path = './test'
     if not os.path.exists(test_path):
