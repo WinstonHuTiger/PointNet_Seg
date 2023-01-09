@@ -1,0 +1,6 @@
+data
+data_*
+augmentation_vtk_data
+*.csv
+test
+ColossaiAI
